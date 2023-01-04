@@ -2,3 +2,9 @@
 name = "grux"
 version = "0.1.0"
 edition = "2021"
+authors = ["Matan Lurey <matan@lurey.org>"]
+description = "A library for drawing grid-based user interfaces using ASCII characters"
+repository = "https://github.com/matanlurey/grux"
+license = "MIT"
+keywords = ["grid", "ui", "ascii", "terminal"]
+categories = ["command-line-interface", "visualization"]

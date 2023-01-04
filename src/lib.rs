@@ -86,6 +86,9 @@
 
 use std::{fmt::Display, string::FromUtf8Error};
 
+#[cfg(test)]
+mod tests;
+
 /// A trait for a grid-like writable buffer, typically with a fixed width and height.
 ///
 /// The grid is indexed by `(x, y)` coordinates, where `x` is the column and `y` is the row.
@@ -125,9 +128,6 @@ pub trait GridWriter {
 
 /// A trait that can be used to display a grid-like buffer to a output stream or a new string.
 pub trait DisplayGrid {
-    /// The type of the elements in the grid, e.g. `char`; must implement `Display`.
-    type Element: Display;
-
     /// Returns a UTF-8 string representation of the grid.
     ///
     /// Each row is separated by a newline (`\n`), including the last row.
@@ -224,8 +224,6 @@ impl<const W: usize, const H: usize, T> DisplayGrid for [[T; W]; H]
 where
     T: Display,
 {
-    type Element = T;
-
     fn print(&self, stream: &mut impl std::io::Write) -> std::io::Result<()> {
         for row in self {
             for element in row {
@@ -296,8 +294,6 @@ impl<T> DisplayGrid for Vec<Vec<T>>
 where
     T: Display + Default + Clone,
 {
-    type Element = T;
-
     fn print(&self, stream: &mut impl std::io::Write) -> std::io::Result<()> {
         for row in self {
             for element in row {
@@ -382,8 +378,6 @@ impl GridWriter for String {
 ///
 /// > ⓘ **NOTE**: This implementation is provided for consistency, but it's already a string, so...
 impl DisplayGrid for String {
-    type Element = char;
-
     fn to_string(&self) -> Result<String, FromUtf8Error> {
         Ok(self.clone())
     }

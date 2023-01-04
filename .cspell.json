@@ -1,7 +1,15 @@
 {
   "words": [
+    "Cinstrument",
+    "clippy",
+    "coverallsapp",
+    "grcov",
     "grux",
+    "lcov",
     "println",
+    "profraw",
+    "RUSTFLAGS",
+    "rustfmt",
     "termion"
   ]
 }
