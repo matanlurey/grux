@@ -2,6 +2,12 @@
 
 A library for drawing grid-based user interfaces using ASCII characters.
 
+[![Rust Checks](https://github.com/matanlurey/grux/actions/workflows/rust.yml/badge.svg)](https://github.com/matanlurey/grux/actions/workflows/rust.yml)
+[![Coverage Status](https://coveralls.io/repos/github/matanlurey/grux/badge.svg)](https://coveralls.io/github/matanlurey/grux)
+[![Current Crates.io Version](https://img.shields.io/crates/v/grux.svg)](https://crates.io/crates/grux)
+[![Docs](https://docs.rs/grux/badge.svg)](https://docs.rs/grux/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 <!-- TODO: Sync this somehow with examples/array.rs -->
 
 ```rs
