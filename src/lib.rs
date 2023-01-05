@@ -1,8 +1,10 @@
 //! A library for drawing grid-based user interfaces using ASCII characters.
 //!
-//! Note that all that is provided is the [`GridWriter`] trait, which is implemented for a few
-//! common data structures. The trait is intentionally simple, and is intended to be implemented
-//! for other data structures as needed.
+//! [`grux`][`crate`] provides:
+//! - A uniform interface for drawing to a 2D grid: [`GridWriter`].
+//! - A uniform interface for displaying a 2D grid: [`DisplayGrid`].
+//!
+//! The [`grux::art`][`crate::art`] module provides helper types for drawing ASCII art.
 //!
 //! # Examples
 //!
@@ -21,7 +23,7 @@
 //! let mut array = [[0; 2]; 2];
 //!
 //! // Set the element at (1, 1) to 1.
-//! array.draw((1, 1), 1);
+//! array.set((1, 1), 1);
 //! assert_eq!(array, [[0, 0], [0, 1]]);
 //! ```
 //!
@@ -41,7 +43,7 @@
 //!
 //! // Set the element at (1, 1) to 1.
 //! // This will grow the vector to fit the position, adding empty default vectors as needed.
-//! vec.draw((1, 1), 1);
+//! vec.set((1, 1), 1);
 //! assert_eq!(vec, vec![vec![], vec![0, 1]]);
 //! ```
 //!
@@ -63,7 +65,7 @@
 //!
 //! // Set the element at (1, 2) to '1'.
 //! // This will grow the string to fit the position, adding empty lines as needed.
-//! string.draw((1, 2), '1');
+//! string.set((1, 2), '1');
 //! assert_eq!(string, "\n\n 1");
 //! ```
 //!
@@ -85,6 +87,8 @@
 //! ```
 
 use std::{fmt::Display, string::FromUtf8Error};
+
+pub mod art;
 
 #[cfg(test)]
 mod tests;
@@ -108,7 +112,7 @@ mod tests;
 /// impl GridWriter for MyGrid {
 ///     type Element = char;
 ///
-///     fn draw(&mut self, position: (usize, usize), element: Self::Element) {
+///     fn set(&mut self, position: (usize, usize), element: Self::Element) {
 ///         let (x, y) = position;
 ///         self.data[y * self.width + x] = element;
 ///     }
@@ -123,7 +127,7 @@ pub trait GridWriter {
     /// How the position is interpreted is up to the implementor; for example, it could grow the
     /// grid to fit the position, or it could panic if the position is out of bounds. See the
     /// documentation for the implementor for more information.
-    fn draw(&mut self, position: (usize, usize), element: Self::Element);
+    fn set(&mut self, position: (usize, usize), element: Self::Element);
 }
 
 /// A trait that can be used to display a grid-like buffer to a output stream or a new string.
@@ -156,7 +160,7 @@ pub trait DisplayGrid {
     /// ```
     fn to_string(&self) -> Result<String, FromUtf8Error> {
         let mut output = Vec::new();
-        self.print(&mut output).unwrap();
+        self.write_to(&mut output).unwrap();
         String::from_utf8(output)
     }
 
@@ -176,11 +180,11 @@ pub trait DisplayGrid {
     ///
     /// // Print the grid to a vector (which can be substituted for say, stdout).
     /// let mut output = Vec::new();
-    /// grid.print(&mut output).unwrap();
+    /// grid.write_to(&mut output).unwrap();
     ///
     /// assert_eq!(output, b"ABC\nDEF\nGHI\n");
     /// ```
-    fn print(&self, stream: &mut impl std::io::Write) -> std::io::Result<()>;
+    fn write_to(&self, stream: &mut impl std::io::Write) -> std::io::Result<()>;
 }
 
 /// Provides [`GridWriter`] for a fixed-size nested array of elements.
@@ -198,7 +202,7 @@ pub trait DisplayGrid {
 /// let mut array = [[0; 2]; 2];
 ///
 /// // Set the element at (1, 1) to 1.
-/// array.draw((1, 1), 1);
+/// array.set((1, 1), 1);
 ///
 /// assert_eq!(array, [[0, 0], [0, 1]]);
 /// ```
@@ -213,7 +217,7 @@ where
     /// # Panics
     ///
     /// If the position is out of bounds.
-    fn draw(&mut self, position: (usize, usize), element: Self::Element) {
+    fn set(&mut self, position: (usize, usize), element: Self::Element) {
         let (x, y) = position;
         self[y][x] = element;
     }
@@ -224,7 +228,7 @@ impl<const W: usize, const H: usize, T> DisplayGrid for [[T; W]; H]
 where
     T: Display,
 {
-    fn print(&self, stream: &mut impl std::io::Write) -> std::io::Result<()> {
+    fn write_to(&self, stream: &mut impl std::io::Write) -> std::io::Result<()> {
         for row in self {
             for element in row {
                 write!(stream, "{}", element)?;
@@ -259,7 +263,7 @@ where
 ///
 /// // Set the element at (1, 1) to 1.
 /// // This will grow the vector to fit the position, adding empty default vectors as needed.
-/// vec.draw((1, 1), 1);
+/// vec.set((1, 1), 1);
 ///
 /// assert_eq!(vec, vec![vec![], vec![0, 1]]);
 /// ```
@@ -272,7 +276,7 @@ where
     /// Sets the element at the given `(x, y)` position.
     ///
     /// If the position is out of bounds, the grid will be resized to fit the position.
-    fn draw(&mut self, position: (usize, usize), element: Self::Element) {
+    fn set(&mut self, position: (usize, usize), element: Self::Element) {
         let (x, y) = position;
 
         if y >= self.len() {
@@ -294,7 +298,7 @@ impl<T> DisplayGrid for Vec<Vec<T>>
 where
     T: Display + Default + Clone,
 {
-    fn print(&self, stream: &mut impl std::io::Write) -> std::io::Result<()> {
+    fn write_to(&self, stream: &mut impl std::io::Write) -> std::io::Result<()> {
         for row in self {
             for element in row {
                 write!(stream, "{}", element)?;
@@ -333,7 +337,7 @@ where
 ///
 /// // Set the element at (1, 1) to 'X'.
 /// // This will grow the string to fit the position, adding empty spaces as needed.
-/// string.draw((1, 1), 'X');
+/// string.set((1, 1), 'X');
 ///
 /// assert_eq!(string, "\n X");
 /// ```
@@ -343,7 +347,7 @@ impl GridWriter for String {
     /// Sets the element at the given `(x, y)` position.
     ///
     /// If the position is out of bounds, the grid will be resized to fit the position.
-    fn draw(&mut self, position: (usize, usize), element: Self::Element) {
+    fn set(&mut self, position: (usize, usize), element: Self::Element) {
         let (x, y) = position;
 
         // Create a vector of the rows (i.e lines) in the string.
@@ -382,7 +386,7 @@ impl DisplayGrid for String {
         Ok(self.clone())
     }
 
-    fn print(&self, stream: &mut impl std::io::Write) -> std::io::Result<()> {
+    fn write_to(&self, stream: &mut impl std::io::Write) -> std::io::Result<()> {
         write!(stream, "{}", self)
     }
 }
